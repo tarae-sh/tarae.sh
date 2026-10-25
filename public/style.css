@@ -100,11 +100,13 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
+/* The grid is its cells' width, and its font sized to the face in use (`--advance`, measured by player.js), so a
+   glyph never runs wider than its cell. */
 .term-grid {
   position: relative;
-  width: 120ch;
+  width: calc(var(--cell-w, 8.95px) * var(--cols, 120));
   font-family: var(--font-mono), var(--font-cjk);
-  font-size: calc(var(--cell-w, 8.95px) / 0.6001);
+  font-size: calc(var(--cell-w, 8.95px) / var(--advance, 0.6001));
   line-height: 1.45;
   font-variant-ligatures: none;
   white-space: pre;
@@ -126,12 +128,18 @@ body {
   display: inline;
 }
 
-.term-row span.w {
+/* Each glyph in its own cell's box, centred (a wide one in two, a run of blanks in theirs): the columns hold in any
+   face, monospaced or not. */
+.term-row span.c {
   display: inline-block;
-  width: 2ch;
+  width: calc(var(--cell-w, 8.95px) * var(--n, 1));
   text-align: center;
-  line-height: 1.45;
   vertical-align: top;
+  text-decoration: inherit;
+}
+
+.term-row span.w {
+  --n: 2;
 }
 
 .term-cursor {

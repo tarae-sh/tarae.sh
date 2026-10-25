@@ -61,8 +61,75 @@
     const innerW = Math.max(280, frameBox.clientWidth - 26);
     // On desktop (>= 680px), fit all 120 columns across the full frame width.
     // On phone (< 680px), keep cells readable (>= 7.2px) and pan to the active beat's focus.
-    const cellW = window.innerWidth < 680 ? Math.max(7.2, innerW / colsCount) : innerW / colsCount;
-    grid.style.setProperty("--cell-w", `${cellW.toFixed(3)}px`);
+    const fit = window.innerWidth < 680 ? Math.max(7.2, innerW / colsCount) : innerW / colsCount;
+    // (on the layout's own 1/64 px, so a cell's box is exactly the cell and n of them exactly n cells)
+    const cellW = Math.floor(fit * 64) / 64;
+    grid.style.setProperty("--cell-w", `${cellW}px`);
+    grid.style.setProperty("--cols", String(colsCount));
+  }
+
+  // Every glyph sits in a box of its own cell (two for a wide one), so the columns hold whatever face the page
+  // gets — a browser that keeps JetBrains Mono out, and whose `monospace` isn't, included. The font is sized from
+  // the face actually in use: the widest advance among the recording's glyphs (each weight and slant it uses,
+  // a wide glyph's half) sets it, so no glyph is wider than its cell. JetBrains Mono's every advance is 0.6 em,
+  // as the grid was sized before, and a face no wider keeps that size.
+  const MONO_ADVANCE = 0.6001;
+  let glyphs = null;
+  let measureCtx = null;
+
+  function recordingGlyphs(data) {
+    const narrow = new Set();
+    const wide = new Set();
+    for (const f of data.frames || []) {
+      for (const runs of Object.values(f.rows || {})) {
+        for (const run of runs) {
+          for (const ch of run[2]) {
+            if (ch === " ") continue;
+            (isWideChar(ch.codePointAt(0)) ? wide : narrow).add(ch);
+          }
+        }
+      }
+    }
+    const fonts = new Set(["400"]);
+    for (const [, , flags] of data.styles || []) {
+      fonts.add(`${flags & 2 ? "italic " : ""}${flags & 1 ? "700" : "400"}`);
+    }
+    return { narrow: [...narrow], wide: [...wide], fonts: [...fonts] };
+  }
+
+  // Measured at once with what's loaded, then again once each weight and slant the recording uses is (a face not
+  // loaded yet measures as the next one in the list).
+  function fitFont() {
+    measureFont();
+    if (!glyphs || !document.fonts || !document.fonts.load) return;
+    const family = getComputedStyle(grid).fontFamily;
+    const sample = glyphs.narrow.join("");
+    Promise.all(glyphs.fonts.map((font) => document.fonts.load(`${font} 16px ${family}`, sample))).then(
+      measureFont,
+      measureFont
+    );
+  }
+
+  function measureFont() {
+    let advance = MONO_ADVANCE;
+    try {
+      if (glyphs) {
+        measureCtx = measureCtx || document.createElement("canvas").getContext("2d");
+        const family = getComputedStyle(grid).fontFamily;
+        let widest = 0;
+        for (const font of glyphs.fonts) {
+          measureCtx.font = `${font} 100px ${family}`;
+          for (const ch of glyphs.narrow) widest = Math.max(widest, measureCtx.measureText(ch).width);
+          for (const ch of glyphs.wide) widest = Math.max(widest, measureCtx.measureText(ch).width / 2);
+        }
+        // (a hair over is let be: JetBrains Mono's subset lacks a glyph or two (`›`), which the next face draws at
+        // 0.602 em — a few hundredths of a pixel, and its box keeps the column all the same)
+        if (widest / 100 > MONO_ADVANCE * 1.01) advance = widest / 100 + 0.0001;
+      }
+    } catch (_) {
+      // (no canvas: JetBrains Mono's proportion, as before)
+    }
+    grid.style.setProperty("--advance", advance.toFixed(4));
   }
 
   // Beat focus column on narrow screens (< 680px):
@@ -183,6 +250,16 @@
     }
   }
 
+  // A cell's box: one glyph centred in its cell (`w`: a wide one in two), or a run of blanks as one box of their
+  // cells. A run of one style stays one span holding its boxes.
+  function cellBox(cls, text, n) {
+    const b = document.createElement("span");
+    b.className = cls;
+    b.textContent = text;
+    if (n > 1) b.style.setProperty("--n", String(n));
+    return b;
+  }
+
   function renderRowFromGrid(r) {
     const rowEl = rowEls[r];
     const row = cells[r];
@@ -198,31 +275,39 @@
       const span = document.createElement("span");
       const css = styleCss[s];
       if (css) span.style.cssText = css;
-      let buf = "";
       while (c < colsCount && row[c].s === s) {
-        if (row[c].w === 2) {
+        const cell = row[c];
+        if (cell.w === 2) {
           c++;
-          continue;
-        }
-        if (row[c].w === 1) {
-          if (buf) {
-            span.appendChild(document.createTextNode(buf));
-            buf = "";
-          }
-          const w = document.createElement("span");
-          w.className = "w";
-          w.textContent = row[c].ch;
-          span.appendChild(w);
+        } else if (cell.w === 1) {
+          span.appendChild(cellBox("c w", cell.ch, 1));
           c += 2;
+        } else if (cell.ch === " ") {
+          let n = 0;
+          while (c < colsCount && row[c].s === s && row[c].w === 0 && row[c].ch === " ") {
+            n++;
+            c++;
+          }
+          span.appendChild(cellBox("c", " ".repeat(n), n));
         } else {
-          buf += row[c].ch;
+          span.appendChild(cellBox("c", cell.ch, 1));
           c++;
         }
       }
-      if (buf) span.appendChild(document.createTextNode(buf));
       frag.appendChild(span);
     }
     rowEl.replaceChildren(frag);
+  }
+
+  function placeCursor(cursor) {
+    if (!cursor) {
+      cursorEl.hidden = true;
+      return;
+    }
+    const [cx, cy] = cursor;
+    cursorEl.hidden = false;
+    cursorEl.style.left = `calc(var(--cell-w) * ${cx})`;
+    cursorEl.style.top = `${cy * 1.45}em`;
   }
 
   function applyFrame(f, renderNow) {
@@ -237,14 +322,7 @@
       if (renderNow) renderRowFromGrid(r);
     }
     if (renderNow) {
-      if (f.cursor) {
-        const [cx, cy] = f.cursor;
-        cursorEl.hidden = false;
-        cursorEl.style.left = `${cx}ch`;
-        cursorEl.style.top = `${cy * 1.45}em`;
-      } else {
-        cursorEl.hidden = true;
-      }
+      placeCursor(f.cursor);
       updateBeat(f.t);
     }
   }
@@ -289,14 +367,7 @@
       renderRowFromGrid(r);
     }
     const f = rec.frames[clamped];
-    if (f.cursor) {
-      const [cx, cy] = f.cursor;
-      cursorEl.hidden = false;
-      cursorEl.style.left = `${cx}ch`;
-      cursorEl.style.top = `${cy * 1.45}em`;
-    } else {
-      cursorEl.hidden = true;
-    }
+    placeCursor(f.cursor);
     updateBeat(f.t, forcedBeatIdx, announce);
     frameIndex = clamped;
   }
@@ -364,9 +435,11 @@
       rec = cache.get(url);
       buildStyles(rec);
       buildBeatDots(rec.beats);
+      glyphs = recordingGlyphs(rec);
       grid.hidden = false;
       if (fallback) fallback.hidden = true;
       fitGrid();
+      fitFont();
       if (!hadRec && reducedMotion.matches && rec.frames && rec.frames.length) {
         seekToFrame(rec.frames.length - 1);
       } else {
@@ -379,6 +452,7 @@
       if (document.fonts && document.fonts.ready) {
         document.fonts.ready.then(() => {
           fitGrid();
+          fitFont();
           panToBeat(currentBeat);
         });
       }
