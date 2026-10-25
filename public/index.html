@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>tarae — A terminal editor with Claude inside.</title>
+  <meta name="description" content="A terminal editor with Claude inside. Helix's keys · Claude's commands sandboxed · sessions side by side">
+  <meta property="og:title" content="tarae — A terminal editor with Claude inside.">
+  <meta property="og:description" content="Helix's keys · Claude's commands sandboxed · sessions side by side">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tarae.sh/">
+  <meta property="og:image" content="https://tarae.sh/hero-meok.png">
+  <link rel="preload" href="fonts/JetBrainsMono-Regular.3e9a7f2e.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/JetBrainsMono-Bold.b25104a9.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="icon" href="seal-meok.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="seal-hanji.svg" type="image/svg+xml" media="(prefers-color-scheme: light)">
+  <link rel="stylesheet" href="style.css">
+  <script src="player.js" defer></script>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div class="brand-row">
+        <div class="brand-id">
+          <picture class="mascot">
+            <source srcset="mascot-hanji.svg" media="(prefers-color-scheme: light)">
+            <img src="mascot-meok.svg" width="56" height="56" alt="tarae's mascot: a ball of thread painted in ink, holding a brush that has drawn the cursor">
+          </picture>
+          <div class="brand-titles">
+            <h1 class="wordmark" aria-label="tarae"><span class="mark" aria-hidden="true">▎</span>t a r a e</h1>
+            <p class="tagline">A terminal editor with Claude inside.</p>
+          </div>
+        </div>
+        <p class="subhead">Helix's keys · Claude's commands sandboxed · sessions side by side</p>
+      </div>
+
+      <section class="stage" aria-label="Three Claudes in one repository: live terminal recording of tarae">
+        <div class="term-frame" id="term-frame">
+          <div
+            id="player"
+            class="term-grid"
+            aria-hidden="true"
+            hidden
+            data-cols="120"
+            data-rows="32"
+            data-meok="rec/hero-meok.json"
+            data-hanji="rec/hero-hanji.json"
+          ></div>
+          <picture id="player-fallback" class="term-fallback">
+            <source srcset="hero-hanji.png" media="(prefers-color-scheme: light)">
+            <img src="hero-meok.png" width="2216" height="1400" alt="tarae terminal showing src/main.rs and three Claude sessions side by side">
+          </picture>
+        </div>
+
+        <div class="stage-bar">
+          <p id="beat-caption" class="beat-caption">
+            <span class="beat-num" id="beat-num">1/6</span>
+            <span id="beat-text">Three Claudes, each in a workspace of its own.</span>
+          </p>
+          <span id="beat-announcer" class="sr-only" aria-live="polite"></span>
+          <div class="stage-controls" role="toolbar" aria-label="Playback controls">
+            <div class="beat-dots" id="beat-dots" role="group" aria-label="Scene beats"></div>
+            <button type="button" id="play-toggle" class="ctrl-btn" aria-label="Pause playback">pause</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="install-bar">
+        <code id="install-cmd" class="install-cmd"><span class="prompt" aria-hidden="true">$ </span>cargo install --git https://github.com/tarae-sh/tarae tarae</code>
+        <button type="button" class="copy-btn" data-copy="cargo install --git https://github.com/tarae-sh/tarae tarae" aria-label="Copy install command">copy</button>
+      </div>
+    </header>
+
+    <section class="section" aria-labelledby="why-heading">
+      <h2 id="why-heading" class="section-title">Why tarae</h2>
+      <dl class="points">
+        <div class="point">
+          <dt>Never waits</dt>
+          <dd>LSP, parsing, git and disk stay off the key path. A frame in under 16 ms. <a href="https://github.com/tarae-sh/tarae/blob/main/docs/features.md">Features</a></dd>
+        </div>
+
+        <div class="point">
+          <dt>Claude as a verb</dt>
+          <dd>select, <code>space i</code>, say it. Review the diff. <a href="https://github.com/tarae-sh/tarae/blob/main/docs/claude-integration.md">Claude</a></dd>
+        </div>
+
+        <div class="point">
+          <dt>Sandboxed by default</dt>
+          <dd>Claude's commands run confined: Seatbelt, or Landlock and seccomp. The network goes through tarae. <a href="https://github.com/tarae-sh/tarae/blob/main/docs/threat-model.md">Threat model</a></dd>
+        </div>
+
+        <div class="point">
+          <dt>Sessions side by side</dt>
+          <dd>a checkout, a Claude and a terminal each. See where each Claude reads and writes, and what would conflict, as it happens; <code>:weave</code> shows a file as they all merge. Bring them back. <a href="https://github.com/tarae-sh/tarae/blob/main/docs/claude-integration.md">Claude</a></dd>
+        </div>
+
+        <div class="point">
+          <dt>Review like a pull request</dt>
+          <dd>hunk by hunk, or at the turn's end. A second Claude reviews too. <a href="https://github.com/tarae-sh/tarae/blob/main/docs/claude-integration.md">Claude</a></dd>
+        </div>
+
+        <div class="point">
+          <dt>The web as text</dt>
+          <dd><code>:web &lt;url&gt;</code> reads a page as its markdown, a buffer like code: <code>gd</code> follows a link. Claude reads pages through the same gate as its commands. <a href="https://github.com/tarae-sh/tarae/blob/main/docs/web.md">Web pages</a></dd>
+        </div>
+
+        <div class="point">
+          <dt>Helix's keys</dt>
+          <dd>the same keymap and command names (<a href="https://github.com/tarae-sh/tarae/blob/main/docs/coming-from-helix.md">coming from Helix</a>).</dd>
+        </div>
+
+        <div class="point">
+          <dt>Plugins in Rust</dt>
+          <dd>sandboxed WebAssembly. <a href="https://github.com/tarae-sh/tarae/blob/main/docs/plugins.md">Kubernetes</a> beside your manifests.</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="section" aria-labelledby="install-heading">
+      <h2 id="install-heading" class="section-title">Install</h2>
+      <pre class="code-block"><code>git clone https://github.com/tarae-sh/tarae &amp;&amp; cd tarae
+cargo install --path .
+tarae .</code></pre>
+      <p class="prose">macOS or Linux (WSL on Windows), with rustup and a C compiler. Claude features need <a href="https://claude.com/claude-code">Claude Code</a> logged in. <code>space ?</code> finds any command; <code>:tutor</code> teaches the keys.</p>
+    </section>
+
+    <section class="section" aria-labelledby="docs-heading">
+      <h2 id="docs-heading" class="section-title">Docs</h2>
+      <p class="prose docs-links">
+        <a href="https://github.com/tarae-sh/tarae/blob/main/docs/features.md">Features</a> ·
+        <a href="https://github.com/tarae-sh/tarae/blob/main/docs/claude-integration.md">Claude</a> ·
+        <a href="https://github.com/tarae-sh/tarae/blob/main/docs/threat-model.md">Threat model</a> ·
+        <a href="https://github.com/tarae-sh/tarae/blob/main/docs/web.md">Web pages</a> ·
+        <a href="https://github.com/tarae-sh/tarae/blob/main/docs/configuration.md">Configuration</a> ·
+        <a href="https://github.com/tarae-sh/tarae/blob/main/docs/languages.md">Languages</a> ·
+        <a href="https://github.com/tarae-sh/tarae/blob/main/docs/plugins.md">Plugins</a> ·
+        <a href="https://github.com/tarae-sh/tarae/blob/main/docs/reference/keymap.md">Keymap</a> ·
+        <a href="https://github.com/tarae-sh/tarae/blob/main/docs/architecture.md">Architecture</a> ·
+        <a href="https://github.com/tarae-sh/tarae/blob/main/docs/roadmap.md">Roadmap</a>
+      </p>
+    </section>
+
+    <footer class="footer">
+      <nav class="footer-links" aria-label="Documentation and repository links">
+        <a href="https://github.com/tarae-sh/tarae/blob/main/docs/features.md">Docs</a>
+        <span aria-hidden="true">·</span>
+        <a href="https://github.com/tarae-sh/tarae">GitHub</a>
+        <span aria-hidden="true">·</span>
+        <a href="https://github.com/tarae-sh/tarae/blob/main/docs/threat-model.md">Threat model</a>
+        <span aria-hidden="true">·</span>
+        <a href="https://github.com/tarae-sh/tarae/blob/main/LICENSE">License (GPL-3.0-or-later)</a>
+      </nav>
+      <div class="footer-sig">
+        <picture class="seal">
+          <source srcset="seal-hanji.svg" media="(prefers-color-scheme: light)">
+          <img src="seal-meok.svg" width="22" height="22" alt="타래 seal">
+        </picture>
+        <span>written in itself, with Claude</span>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>
