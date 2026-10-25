@@ -23,7 +23,7 @@ cp target/homepage/hero-meok.png target/homepage/hero-hanji.png ../tarae.sh/publ
 
 ## Deploying
 
-`cf deploy --prebuilt` uploads `.cloudflare/output/v0/workers/default/assets` without running a build step, so always sync `public/` into `.cloudflare/output/v0/workers/default/assets` first:
+`cf deploy --prebuilt` uploads `.cloudflare/output/v0/workers/default/assets` without running a build step, so always sync `public/` into `.cloudflare/output/v0/workers/default/assets` first. The prebuilt output is git-ignored and kept by hand: `.cloudflare/output/v0/workers/default/worker.config.json` mirrors `cloudflare.config.ts` (its `domains` too), and `.cloudflare/output/v0/config.json`'s `buildContext.isPreview` is `true` for a preview deploy (`cf previews deploy` refuses otherwise) and `false` for production:
 
 Dry run:
 
