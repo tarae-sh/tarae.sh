@@ -17,6 +17,28 @@
   });
 
   const root = document.documentElement;
+
+  // ── The top line ────────────────────────────────────────────────────────────
+  // It stays at the top (CSS); stuck there it takes the rule under it, and once the big title is out of sight
+  // its small name comes in at the line's start — written or standing, motion or none.
+  const topline = document.getElementById("topline");
+  const tlName = document.getElementById("tl-name");
+  const titleGone = () => {
+    const bar = topline.getBoundingClientRect();
+    const title = document.querySelector(".b-brand");
+    const t = title.getBoundingClientRect();
+    // (while it's still to be written it takes no room: the header's place stands for it)
+    return t.height ? t.bottom <= bar.bottom : title.parentElement.getBoundingClientRect().top < bar.bottom;
+  };
+  // (a browser sends scroll at most once a frame already)
+  const updateTop = () => {
+    topline.classList.toggle("stuck", topline.getBoundingClientRect().top <= 0.5 && window.scrollY > 0);
+    tlName.classList.toggle("on", titleGone());
+  };
+  window.addEventListener("scroll", updateTop, { passive: true });
+  window.addEventListener("resize", updateTop);
+  updateTop();
+
   if (!root.classList.contains("anim")) return;
 
   const buf = document.getElementById("buf");
@@ -25,7 +47,11 @@
   const toastBody = document.getElementById("toast-body");
   const card = document.getElementById("card");
   const cardKeys = document.getElementById("card-keys");
+  const strip = document.getElementById("strip");
+  const path = document.getElementById("tl-path");
+  const hint = document.getElementById("tl-hint");
   const pristine = buf.innerHTML;
+  const pathPristine = path.innerHTML;
 
   const NAMES = ["main", "fix", "docs"];
   const COLOUR = { main: 1, fix: 2, docs: 3 };
@@ -71,6 +97,9 @@
     cleanups = [];
     buf.innerHTML = pristine;
     buf.removeAttribute("aria-busy");
+    path.innerHTML = pathPristine;
+    strip.replaceChildren();
+    hint.hidden = true;
     ink.replaceChildren();
     toast.hidden = true;
     card.hidden = true;
@@ -102,20 +131,18 @@
     // ── The page taken back to its blanks ──────────────────────────────────
     buf.setAttribute("aria-busy", "true");
     buf.innerHTML = pristine;
+    hint.hidden = true;
     ink.replaceChildren();
     toast.hidden = true;
     card.hidden = true;
     card.className = "card";
+    updateTop();
     const $ = (id) => document.getElementById(id);
-    const strip = $("strip");
-    const path = $("tl-path");
-    const hint = $("tl-hint");
     const run = $("run");
     const runok = $("runok");
     const seal = $("seal");
     const chead = $("chead");
     const wrap = $("p4wrap");
-    hint.addEventListener("click", play);
 
     // A screen reader doesn't wait ~20 s for the page to be written: while it is, the written-out part is hidden
     // from it and a visually hidden copy of the whole text stands beside it (outside the busy hero, so it's read).
@@ -222,6 +249,7 @@
       if (window.innerWidth === width) return;
       width = window.innerWidth;
       release();
+      fitStrip();
     };
     window.addEventListener("resize", onResize);
     cleanups.push(() => window.removeEventListener("resize", onResize));
@@ -231,12 +259,7 @@
     // ── The sessions ───────────────────────────────────────────────────────
     strip.replaceChildren();
     const sess = {};
-    NAMES.forEach((name, i) => {
-      if (i) strip.append(el("span", "dot", "·"));
-      const entry = el("span", "s");
-      entry.dataset.s = name;
-      entry.append(el("b", `c${COLOUR[name]}`, name), " ", el("i", "", ""), el("span", "ov warn", ""));
-      strip.append(entry);
+    NAMES.forEach((name) => {
       const caret = el("div", `caret own${COLOUR[name]}`);
       const tag = el("div", `tag own${COLOUR[name]}`);
       caret.hidden = true;
@@ -246,16 +269,50 @@
       sess[name] = { name, caret, tag, marker, rnd: rng(SEED[name]), block: null, skips: [], fade: 0 };
     });
     // The strip says each session's state as tarae's does (`working`, `▲ waits`, `done`); what it does where —
-    // `reading`, `writing` — is its tag's.
-    for (const name of NAMES) state(name, "working");
+    // `reading`, `writing` — is its tag's. It's drawn from this, the sessions still named, in their order.
+    const line = NAMES.map((name) => ({ name, word: "working", kind: "", ov: "" }));
+    fitStrip();
     function state(name, word, kind) {
-      const entry = strip.querySelector(`[data-s="${name}"]`);
-      entry.className = `s ${kind || ""}`;
-      entry.querySelector("i").textContent = word;
+      const s = line.find((x) => x.name === name);
+      s.word = word;
+      s.kind = kind || "";
+      fitStrip();
     }
     const overlap = (name, with_) => {
-      strip.querySelector(`[data-s="${name}"] .ov`).textContent = with_ ? ` ≈ ${with_}` : "";
+      line.find((x) => x.name === name).ov = with_;
+      fitStrip();
     };
+    // The strip stays one row, as tarae's chat line does: names stay whole; the states fold to their glyph first
+    // (`▲` waits, `◦` the rest), then the sessions go into `+N` from the back — all but the front one and those
+    // waiting on you, which stay named whatever the room. A folded one's `·` goes with it. The path gives way
+    // only after (CSS), and never to nothing.
+    function fitStrip() {
+      const over = () => topline.scrollWidth > topline.clientWidth + 1 || path.scrollWidth > path.clientWidth + 1;
+      const draw = (glyphs, shown) => {
+        strip.replaceChildren();
+        for (const s of shown) {
+          if (strip.firstChild) strip.append(el("span", "dot", "·"));
+          const entry = el("span", `s ${s.kind}`);
+          entry.dataset.s = s.name;
+          const word = glyphs ? (s.kind === "waits" ? "▲" : "◦") : s.word;
+          const ov = s.ov ? (glyphs ? " ≈" : ` ≈ ${s.ov}`) : "";
+          entry.append(el("b", `c${COLOUR[s.name]}`, s.name), " ", el("i", "", word), el("span", "ov warn", ov));
+          strip.append(entry);
+        }
+        if (shown.length < line.length) {
+          strip.append(el("span", "dot", "·"), el("span", "more", `+${line.length - shown.length}`));
+        }
+      };
+      draw(false, line);
+      if (!line.length || !over()) return;
+      const shown = [...line];
+      draw(true, shown);
+      for (let i = shown.length - 1; i > 0 && over(); i--) {
+        if (shown[i].kind === "waits") continue;
+        shown.splice(i, 1);
+        draw(true, shown);
+      }
+    }
 
     // Carets and tags sit in an overlay over the text, placed from each session's marker every frame. A tag never
     // lies over text: after the caret when the rest of its line has room (up to the block's edge, or a button in
@@ -296,7 +353,6 @@
     };
     // A toast says what changed among the sessions the strip names, so it never covers the strip: its frame's top
     // goes under the top line, however many rows that takes now (its name sits on the frame's edge, above it).
-    const topline = buf.querySelector(".topline");
     const toastName = toast.querySelector(".fr-name");
     const placeToast = () => {
       const below = Math.max(16, topline.getBoundingClientRect().bottom);
@@ -633,13 +689,17 @@
       await sl(900);
       const entry = strip.querySelector(`[data-s="${name}"]`);
       unmark(name, true);
-      flash(entry);
+      if (entry) flash(entry);
       await sl(380);
-      entry.previousElementSibling.remove();
-      entry.remove();
+      line.splice(
+        line.findIndex((x) => x.name === name),
+        1
+      );
+      fitStrip();
     };
     const plain = async () => {
       await sl(200);
+      line.length = 0;
       strip.replaceChildren();
       unmark("main", false);
       path.replaceChildren("tarae.sh ", el("span", "tl-sep", "›"), " ", el("b", "", "index.md"));
@@ -658,6 +718,7 @@
       buf.normalize();
       unhide();
       buf.setAttribute("aria-busy", "false");
+      updateTop();
     };
 
     (async () => {
@@ -677,16 +738,19 @@
     })();
   }
 
-  // `r` replays only what's done (`r replay` shown), and only while its top line is on screen — never under a
-  // visitor reading further down.
+  // `r` replays only what's done (`r replay` shown), and only while the big title is in sight — never under a
+  // visitor reading further down (the top line itself is always in sight now). `r replay` pressed from down there
+  // takes the page back up to it first.
   document.addEventListener("keydown", (e) => {
     if (e.key !== "r" || e.ctrlKey || e.metaKey || e.altKey) return;
-    const hint = document.getElementById("tl-hint");
-    if (!hint || hint.hidden) return;
+    if (hint.hidden) return;
     const t = e.target;
     if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
-    const top = buf.querySelector(".topline").getBoundingClientRect();
-    if (top.bottom <= 0 || top.top >= window.innerHeight) return;
+    if (titleGone()) return;
+    play();
+  });
+  hint.addEventListener("click", () => {
+    if (titleGone()) window.scrollTo({ top: 0, behavior: "smooth" });
     play();
   });
 

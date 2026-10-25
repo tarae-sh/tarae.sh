@@ -36,15 +36,29 @@
 
 /* ── The pane's top line ─────────────────────────────────────────────────── */
 
+/* It stays at the top as the page scrolls, as every tarae pane keeps its top line: one row, on the page's ground —
+   out to the page's edges and over the safe area — above the carets' overlay, with the rule under it once it's
+   stuck. At rest it lies where it did (its padding taken back from its margins). */
 .topline {
+  position: sticky;
+  top: 0;
+  z-index: 8;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 0.25rem 0.75ch;
+  gap: 0 0.75ch;
+  margin: calc(-0.6rem - env(safe-area-inset-top, 0px)) -1.25rem 1.65rem;
+  padding: calc(0.6rem + env(safe-area-inset-top, 0px)) 1.25rem 0.6rem;
+  overflow: hidden;
+  white-space: nowrap;
   font-size: 0.82rem;
   color: var(--dim);
-  margin-bottom: 2.25rem;
-  min-height: 1.4em;
+  background: var(--bg);
+  transition: box-shadow 0.2s ease-out;
+}
+
+.topline.stuck {
+  box-shadow: 0 1px 0 var(--rule);
 }
 
 .tl-rule {
@@ -53,39 +67,69 @@
 }
 
 .tl-tail {
+  flex: none;
   width: 1.5ch;
 }
 
-/* The line's ends go with their words, never on a row of their own: the leading rule with the path, the trailing
-   one with the strip's last entry — or with `r replay`, or (neither there) on its own after the fill. */
-.tl-path::before,
-.tl-strip .s:last-child::after,
-.tl-hint::after {
+/* The small name, once the big title is out of sight: in a place kept for it at the line's start, where the line's
+   rule runs meanwhile, so it fades in and nothing else moves. */
+.tl-name {
+  position: relative;
+  flex: none;
+  padding-right: 0.75ch;
+  margin-right: -0.75ch;
+  color: var(--fg);
+}
+
+.tl-name::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--faint);
+  transition: opacity 0.2s ease-out;
+}
+
+.tl-name > * {
+  opacity: 0;
+  transition: opacity 0.2s ease-out;
+}
+
+.tl-name.on::before {
+  opacity: 0;
+}
+
+.tl-name.on > * {
+  opacity: 1;
+}
+
+.tl-mark {
+  color: var(--accent);
+}
+
+/* The path gives way last, and never to nothing; the strip folds first (weave.js). */
+.tl-path {
+  flex: 0 1 auto;
+  min-width: 6ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tl-path::before {
   content: "";
   display: inline-block;
   width: 1.5ch;
   height: 1px;
+  margin-right: 0.75ch;
   background: var(--faint);
   /* (the middle of the text's line, where the fill's rule runs) */
   vertical-align: 0.35em;
 }
 
-.tl-path::before {
-  margin-right: 0.75ch;
-}
-
-.tl-strip .s:last-child::after,
-.tl-hint::after {
-  margin-left: 0.75ch;
-}
-
-.tl-strip:not(:empty) ~ .tl-tail,
-.tl-hint:not([hidden]) ~ .tl-tail {
-  display: none;
-}
-
 .tl-fill {
-  flex: 1 1 2ch;
+  flex: 1 0 2ch;
 }
 
 .tl-path b {
@@ -102,7 +146,7 @@
 
 .tl-strip {
   display: flex;
-  flex-wrap: wrap;
+  flex: none;
   gap: 0 0.75ch;
 }
 
@@ -128,11 +172,13 @@
   color: var(--accent);
 }
 
-.tl-strip .dot {
+.tl-strip .dot,
+.tl-strip .more {
   color: var(--faint);
 }
 
 .tl-hint {
+  flex: none;
   margin-left: 1.25ch;
   font: inherit;
   color: var(--faint);
@@ -633,6 +679,46 @@
     left: auto;
     right: 0.4ch;
     top: 0;
+  }
+}
+
+/* (the page's own padding, which the top line's ground reaches over) On a phone the line is drawn closer, so the
+   strip has the room to stay whole (`main ◦ · fix ◦ · docs ▲` at 375 wide): narrower gaps, a shorter tail, and
+   the place kept for `▎tarae` is the path's leading rule (the path's own would cost two cells). */
+@media (max-width: 680px) {
+  .topline {
+    gap: 0 0.5ch;
+    margin-inline: -0.85rem;
+    padding-inline: 0.85rem;
+  }
+
+  .tl-name {
+    padding-right: 0;
+    margin-right: 0;
+  }
+
+  .tl-path::before {
+    display: none;
+  }
+
+  .tl-fill {
+    flex-basis: 0;
+  }
+
+  .tl-tail {
+    width: 1ch;
+  }
+
+  .tl-strip {
+    gap: 0 0.5ch;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topline,
+  .tl-name::before,
+  .tl-name > * {
+    transition: none;
   }
 }
 
