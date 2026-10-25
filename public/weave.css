@@ -1,0 +1,663 @@
+/* The page as a woven view: three sessions write it, each in its colour (meok/hanji's ui.participant.1–3). */
+
+:root {
+  --surface: #15181e;
+  --surface-hi: #20242c;
+  --fg-hi: #fbf8f1;
+  --dim: #747884;
+  --faint: #51545c;
+  --warn: #ffb52e;
+  --wet: #abd06a;
+  --p1: #6fa8ff;
+  --p2: #d2a6ff;
+  --p3: #7ee0b8;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --surface: #ebe5d8;
+    --surface-hi: #ded6c4;
+    --fg-hi: #1d1c19;
+    --dim: #74767e;
+    --faint: #9c9586;
+    --warn: #703000;
+    --wet: #406c00;
+    --p1: #1f58c0;
+    --p2: #8a3cc0;
+    --p3: #007255;
+  }
+}
+
+.c1 { color: var(--p1); }
+.c2 { color: var(--p2); }
+.c3 { color: var(--p3); }
+.warn { color: var(--warn); }
+.faint { color: var(--dim); }
+
+/* ── The pane's top line ─────────────────────────────────────────────────── */
+
+.topline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75ch;
+  font-size: 0.82rem;
+  color: var(--dim);
+  margin-bottom: 2.25rem;
+  min-height: 1.4em;
+}
+
+.tl-rule {
+  height: 1px;
+  background: var(--faint);
+}
+
+.tl-tail {
+  width: 1.5ch;
+}
+
+/* The line's ends go with their words, never on a row of their own: the leading rule with the path, the trailing
+   one with the strip's last entry — or with `r replay`, or (neither there) on its own after the fill. */
+.tl-path::before,
+.tl-strip .s:last-child::after,
+.tl-hint::after {
+  content: "";
+  display: inline-block;
+  width: 1.5ch;
+  height: 1px;
+  background: var(--faint);
+  /* (the middle of the text's line, where the fill's rule runs) */
+  vertical-align: 0.35em;
+}
+
+.tl-path::before {
+  margin-right: 0.75ch;
+}
+
+.tl-strip .s:last-child::after,
+.tl-hint::after {
+  margin-left: 0.75ch;
+}
+
+.tl-strip:not(:empty) ~ .tl-tail,
+.tl-hint:not([hidden]) ~ .tl-tail {
+  display: none;
+}
+
+.tl-fill {
+  flex: 1 1 2ch;
+}
+
+.tl-path b {
+  color: var(--fg);
+}
+
+.tl-sep {
+  color: var(--faint);
+}
+
+.tl-woven {
+  color: var(--dim);
+}
+
+.tl-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.75ch;
+}
+
+.tl-strip:empty {
+  display: none;
+}
+
+.tl-strip .s b {
+  font-weight: 700;
+}
+
+.tl-strip .s i {
+  font-style: normal;
+  color: var(--faint);
+}
+
+.tl-strip .s.waits i,
+.tl-strip .s.overlap i {
+  color: var(--warn);
+}
+
+.tl-strip .s.done i {
+  color: var(--accent);
+}
+
+.tl-strip .dot {
+  color: var(--faint);
+}
+
+.tl-hint {
+  margin-left: 1.25ch;
+  font: inherit;
+  color: var(--faint);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.tl-hint b {
+  color: var(--dim);
+}
+
+.tl-hint:hover b {
+  color: var(--accent);
+}
+
+/* ── The buffer ──────────────────────────────────────────────────────────── */
+
+.buf {
+  position: relative;
+  margin-bottom: 3rem;
+}
+
+.b-hero {
+  margin-bottom: 2rem;
+}
+
+.b-brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.b-mascot img {
+  display: block;
+  width: 64px;
+  height: 64px;
+}
+
+.b-title {
+  margin: 0;
+  font-size: clamp(2rem, 4.2vw, 3rem);
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+/* The one accent mark, as tarae's start screen has it before `t a r a e`: a caret's thin bar the line's height,
+   not the `▎` glyph blown up to the title's size (that one stays in the text, unseen, for a page without CSS). */
+.b-title .mark {
+  display: inline-block;
+  width: max(2px, 0.055em);
+  height: 1.05em;
+  margin-right: 0.55ch;
+  vertical-align: -0.2em;
+  overflow: hidden;
+  color: transparent;
+  background: var(--accent);
+}
+
+.b-tagline {
+  margin: 0 0 0.4rem;
+  font-size: 1.15rem;
+  color: var(--fg);
+}
+
+.b-sub {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 0.9rem;
+}
+
+/* The points in one reading order — main's and fix's in turn — laid by rows: main's left, fix's right, so the eye,
+   Tab and a screen reader go the same way. */
+.b-points {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1rem 2.5rem;
+  /* (held taller than what's in yet, its rows stay at the top rather than spread; a point keeps its own height
+     rather than its row's) */
+  align-content: start;
+  align-items: start;
+  margin-bottom: 1.75rem;
+}
+
+.b-point {
+  margin: 0;
+  color: var(--fg-muted);
+}
+
+.b-point b {
+  color: var(--fg);
+}
+
+.b-installwrap {
+  position: relative;
+}
+
+.b-run {
+  display: none;
+  margin: 0.5rem 0 0;
+  font-size: 0.82rem;
+  color: var(--dim);
+}
+
+.b-runmark {
+  color: var(--dim);
+}
+
+.b-runwhere {
+  margin-left: 1.5ch;
+  color: var(--faint);
+}
+
+.b-runok {
+  margin-left: 1.5ch;
+}
+
+.b-runok.ok {
+  color: var(--wet);
+}
+
+.b-seal {
+  display: none;
+}
+
+/* ── While the sessions write (`.anim`) ─────────────────────────────────── */
+
+/* Nothing of the written text shows before the writers have taken it (no flash of the whole page). Until weave.js
+   has measured (`.woven`), the page lies as it will while written: the header's blocks without room, the points'
+   columns at their height with the conflict's head and fix's part in, all unseen. */
+.anim [data-w]:not(.ready) {
+  visibility: hidden;
+}
+
+.anim:not(.woven) .b-hero [data-w] {
+  display: none;
+}
+
+.anim:not(.woven) .b-conflict > [hidden] {
+  display: block;
+  visibility: hidden;
+}
+
+/* A block no session has entered takes no room; entered, it takes its final height at once (held by weave.js).
+   The conflict's frame waits with main's part in it. */
+.anim .w-wait {
+  display: none;
+}
+
+.anim .b-title .mark.pending {
+  display: inline-block;
+  visibility: hidden;
+}
+
+.b-copy {
+  font-family: inherit;
+  font-size: 0.8rem;
+  color: var(--fg-muted);
+  background: var(--bg-elevated);
+  border: 1px solid var(--rule);
+  padding: 0.2rem 0.55rem;
+  cursor: pointer;
+  line-height: 1.3;
+  flex-shrink: 0;
+}
+
+.b-copy:hover {
+  color: var(--fg);
+  border-color: var(--fg-dim);
+}
+
+.b-copy:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.anim [data-w] .pending {
+  display: none;
+}
+
+.anim .b-install.blank {
+  visibility: hidden;
+}
+
+.anim .b-run {
+  display: block;
+  visibility: hidden;
+}
+
+.anim .b-run.on {
+  visibility: visible;
+}
+
+.anim .b-seal {
+  display: block;
+  position: absolute;
+  right: 0;
+  bottom: -2.6rem;
+  visibility: hidden;
+}
+
+.anim .b-seal.on {
+  visibility: visible;
+  animation: press 0.45s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+@keyframes press {
+  from {
+    transform: scale(1.35) rotate(-4deg);
+    opacity: 0;
+  }
+}
+
+[data-w] {
+  position: relative;
+}
+
+/* A change's sign: a bar in its session's colour, in the gutter, while it isn't brought in. */
+[data-w]::before {
+  content: "";
+  position: absolute;
+  left: -16px;
+  top: 0.2em;
+  bottom: 0.2em;
+  width: 2px;
+  background: var(--own, transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+}
+
+[data-w].own::before {
+  opacity: 1;
+}
+
+.own1 { --own: var(--p1); }
+.own2 { --own: var(--p2); }
+.own3 { --own: var(--p3); }
+
+/* Claude's fresh writing is wet ink: the change's green, drying to the text's own ink. */
+.wet {
+  animation: dry 1s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+@keyframes dry {
+  from {
+    color: var(--wet);
+  }
+}
+
+/* What a bring touched flashes once. */
+.flash {
+  animation: flash 0.35s ease-out both;
+}
+
+@keyframes flash {
+  from {
+    background-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+}
+
+/* The conflict, as the woven view shows it: each side's part washed in its colour, its letter in the gutter. */
+.b-chead {
+  font-size: 0.78rem;
+  color: var(--dim);
+  margin-bottom: -0.4rem;
+}
+
+.b-conflict {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.anim:not(.woven) .b-conflict,
+.b-conflict.on {
+  gap: 0.35rem;
+}
+
+/* Its line kept, empty, while the conflict isn't there (main's part under it never moves). */
+.b-chead.mute {
+  visibility: hidden;
+}
+
+.part {
+  background: color-mix(in srgb, var(--own) 9%, transparent);
+}
+
+.part::after {
+  content: attr(data-letter);
+  position: absolute;
+  left: -30px;
+  top: 0;
+  font-weight: 700;
+  color: var(--own);
+  font-size: 0.85em;
+}
+
+.folding {
+  animation: fold 0.5s ease-in both;
+}
+
+@keyframes fold {
+  to {
+    opacity: 0;
+  }
+}
+
+/* ── Carets and their tags (an overlay: they never move the text) ───────── */
+
+.ink {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 0;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.caret {
+  position: absolute;
+  width: 2px;
+  background: var(--own);
+}
+
+.tag {
+  position: absolute;
+  font-size: 0.74rem;
+  line-height: 1.2;
+  color: var(--own);
+  white-space: nowrap;
+  transition: opacity 0.1s linear;
+}
+
+.tag.gone {
+  opacity: 0;
+}
+
+/* Where it can't help lying over text: on the page's own ground. */
+.tag.ground {
+  background: var(--bg);
+  box-shadow: 0 0 0 2px var(--bg);
+}
+
+/* ── Floating cards: a toast top right (news), an ask bottom right (needs you) ─ */
+
+.toast,
+.card {
+  position: fixed;
+  z-index: 10;
+  right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--bg);
+  border: 1px solid var(--faint);
+  padding: 0.9rem 1.1ch 0.6rem;
+  font-size: 0.82rem;
+  max-width: min(46ch, calc(100vw - 32px));
+}
+
+/* (its top is placed by weave.js under the top line, however many rows the strip takes) */
+.toast {
+  top: 3.25rem;
+  transition: opacity 0.3s ease-out;
+}
+
+.toast.gone {
+  opacity: 0;
+}
+
+.card {
+  bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.card.focused {
+  border-color: var(--accent);
+  cursor: default;
+}
+
+/* (the focused frame's accent border is its focus ring, as in tarae) */
+.card:focus {
+  outline: none;
+}
+
+.card.gone {
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+}
+
+/* Untouched, the ask folds to tarae's one-row peek: its name alone, in its faint frame. */
+.card.peek {
+  padding: 0.35rem 1.1ch;
+}
+
+.card.peek .card-body,
+.card.peek .fr-keys {
+  display: none;
+}
+
+.card.peek .fr-name {
+  position: static;
+  padding: 0;
+  max-width: none;
+  background: none;
+}
+
+.fr-name {
+  position: absolute;
+  top: -0.75em;
+  left: 1ch;
+  padding: 0 0.6ch;
+  background: var(--bg);
+  color: var(--fg);
+  white-space: nowrap;
+  max-width: calc(100% - 2ch);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toast .fr-name {
+  color: var(--dim);
+}
+
+.card-body p {
+  margin: 0 0 0.5rem;
+}
+
+.card-body code {
+  font-size: 1em;
+}
+
+.fr-keys {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 2ch;
+  color: var(--faint);
+  min-height: 1.5em;
+}
+
+.fr-keys .k b {
+  color: var(--dim);
+}
+
+/* A focused card's keys are pressed as tarae's are: no buttons' chrome, but a pointer and a target a finger hits. */
+.card.focused .fr-keys .k {
+  display: inline-flex;
+  align-items: center;
+  gap: 1ch;
+  min-height: 32px;
+  padding: 0 0.6ch;
+  margin: 0 -0.6ch;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.card.focused .fr-keys .k b {
+  color: var(--accent);
+}
+
+/* The decided key as a stamp (`▐y▌`): lit in the accent, then dry on the dim ground. */
+.stamp {
+  font-weight: 700;
+}
+
+.st-edge {
+  color: var(--accent);
+  animation: edgedry 1s 0.35s ease-out forwards;
+}
+
+.st-key {
+  color: var(--bg);
+  background: var(--accent);
+  animation: keydry 1s 0.35s ease-out forwards;
+}
+
+@keyframes edgedry {
+  to {
+    color: var(--surface-hi);
+  }
+}
+
+@keyframes keydry {
+  to {
+    color: var(--dim);
+    background: var(--surface-hi);
+  }
+}
+
+/* ── Narrow ──────────────────────────────────────────────────────────────── */
+
+@media (max-width: 1239px) {
+  .part::after {
+    left: auto;
+    right: 0.4ch;
+    top: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  /* One column, the same order: main and fix both write within the first screen. */
+  .b-points {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .b-mascot img {
+    width: 48px;
+    height: 48px;
+  }
+
+  [data-w]::before {
+    left: -10px;
+  }
+
+  .part::after {
+    left: auto;
+    right: 0;
+    top: -1.1rem;
+  }
+}
+
+.real {
+  margin-bottom: 1rem;
+}

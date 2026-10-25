@@ -16,105 +16,86 @@
   <link rel="icon" href="seal-meok.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
   <link rel="icon" href="seal-hanji.svg" type="image/svg+xml" media="(prefers-color-scheme: light)">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="weave.css">
+  <script src="motion.js"></script>
+  <script src="weave.js" defer></script>
   <script src="player.js" defer></script>
 </head>
 <body>
+  <div id="ink" class="ink" aria-hidden="true"></div>
   <main class="page">
-    <header class="hero">
-      <div class="brand-row">
-        <div class="brand-id">
-          <picture class="mascot">
+    <div class="buf" id="buf">
+      <div class="topline" aria-hidden="true">
+        <span class="tl-path" id="tl-path">tarae.sh <span class="tl-sep">›</span> <b>index.md</b></span>
+        <span class="tl-rule tl-fill"></span>
+        <span class="tl-strip" id="strip"></span>
+        <button type="button" class="tl-hint" id="tl-hint" hidden><b>r</b> replay</button>
+        <span class="tl-rule tl-tail"></span>
+      </div>
+
+      <header class="b-hero">
+        <div class="b-brand" data-w="title">
+          <picture class="b-mascot">
             <source srcset="mascot-hanji.svg" media="(prefers-color-scheme: light)">
-            <img src="mascot-meok.svg" width="56" height="56" alt="tarae's mascot: a ball of thread painted in ink, holding a brush that has drawn the cursor">
+            <img src="mascot-meok.svg" width="64" height="64" alt="tarae's mascot: a ball of thread painted in ink, holding a brush that has drawn the cursor">
           </picture>
-          <div class="brand-titles">
-            <h1 class="wordmark" aria-label="tarae"><span class="mark" aria-hidden="true">▎</span>t a r a e</h1>
-            <p class="tagline">A terminal editor with Claude inside.</p>
-          </div>
+          <h1 class="b-title" aria-label="tarae"><span class="mark" data-skip aria-hidden="true">▎</span>t a r a e</h1>
         </div>
-        <p class="subhead">Helix's keys · Claude's commands sandboxed · sessions side by side</p>
+        <p class="b-tagline" data-w="tagline">A terminal editor with Claude inside.</p>
+        <p class="b-sub" data-w="sub">Helix's keys · Claude's commands sandboxed · sessions side by side</p>
+      </header>
+
+      <div class="b-points">
+        <p class="b-point" data-w="p1"><b>Never waits</b> — LSP, parsing, git and disk stay off the key path. A frame in under 16 ms.</p>
+        <p class="b-point" data-w="p5"><b>Review like a pull request</b> — hunk by hunk, or at the turn's end. A second Claude reviews too.</p>
+        <p class="b-point" data-w="p2"><b>Claude as a verb</b> — select, <code>space i</code>, say it. Review the diff.</p>
+        <p class="b-point" data-w="p6"><b>The web as text</b> — <code>:web &lt;url&gt;</code> reads a page as its markdown, a buffer like code: <code>gd</code> follows a link. Claude reads pages through the same gate as its commands.</p>
+        <p class="b-point" data-w="p3"><b>Sandboxed by default</b> — Claude's commands run confined: Seatbelt, or Landlock and seccomp. The network goes through tarae.</p>
+        <p class="b-point" data-w="p7"><b>Helix's keys</b> — the same keymap and command names (<a href="https://github.com/tarae-sh/tarae/blob/main/docs/coming-from-helix.md">coming from Helix</a>).</p>
+        <div class="b-conflict" id="p4wrap">
+          <div class="b-chead" id="chead" hidden><span class="warn">≈</span> conflict 1 of 1</div>
+          <p class="b-point" data-w="p4m"><b>Sessions side by side</b> — a checkout, a Claude and a terminal each. See where each Claude reads and writes, and what would conflict, as it happens; <code>:weave</code> shows a file as they all merge. Bring them back.</p>
+          <p class="b-point" data-w="p4f" hidden><b>Sessions side by side</b> — one checkout per Claude, and you see where they would collide.</p>
+        </div>
+        <p class="b-point" data-w="p8"><b>Plugins in Rust</b> — sandboxed WebAssembly. <a href="https://github.com/tarae-sh/tarae/blob/main/docs/plugins.md">Kubernetes</a> beside your manifests.</p>
       </div>
 
-      <section class="stage" aria-label="Three Claudes in one repository: live terminal recording of tarae">
-        <div class="term-frame" id="term-frame">
-          <div
-            id="player"
-            class="term-grid"
-            aria-hidden="true"
-            hidden
-            data-cols="120"
-            data-rows="32"
-            data-meok="rec/hero-meok.json"
-            data-hanji="rec/hero-hanji.json"
-          ></div>
-          <picture id="player-fallback" class="term-fallback">
-            <source srcset="hero-hanji.png" media="(prefers-color-scheme: light)">
-            <img src="hero-meok.png" width="2216" height="1400" alt="tarae terminal showing src/main.rs and three Claude sessions side by side">
-          </picture>
+      <div class="b-installwrap">
+        <div class="install-bar b-install" data-w="install">
+          <code class="install-cmd"><span class="prompt" aria-hidden="true">$ </span>cargo install --git https://github.com/tarae-sh/tarae tarae</code>
+          <button type="button" class="b-copy" data-skip data-copy="cargo install --git https://github.com/tarae-sh/tarae tarae" aria-label="Copy install command">copy</button>
         </div>
-
-        <div class="stage-bar">
-          <p id="beat-caption" class="beat-caption">
-            <span class="beat-num" id="beat-num">1/6</span>
-            <span id="beat-text">Three Claudes, each in a workspace of its own.</span>
-          </p>
-          <span id="beat-announcer" class="sr-only" aria-live="polite"></span>
-          <div class="stage-controls" role="toolbar" aria-label="Playback controls">
-            <div class="beat-dots" id="beat-dots" role="group" aria-label="Scene beats"></div>
-            <button type="button" id="play-toggle" class="ctrl-btn" aria-label="Pause playback">pause</button>
-          </div>
-        </div>
-      </section>
-
-      <div class="install-bar">
-        <code id="install-cmd" class="install-cmd"><span class="prompt" aria-hidden="true">$ </span>cargo install --git https://github.com/tarae-sh/tarae tarae</code>
-        <button type="button" class="copy-btn" data-copy="cargo install --git https://github.com/tarae-sh/tarae tarae" aria-label="Copy install command">copy</button>
+        <p class="b-run" id="run" aria-hidden="true"><span class="b-runmark">▸</span> cargo build --locked <span class="b-runwhere">sandbox</span> <span class="b-runok" id="runok">ok</span></p>
+        <picture class="b-seal" id="seal">
+          <source srcset="seal-hanji.svg" media="(prefers-color-scheme: light)">
+          <img src="seal-meok.svg" width="30" height="30" alt="">
+        </picture>
       </div>
-    </header>
+    </div>
 
-    <section class="section" aria-labelledby="why-heading">
-      <h2 id="why-heading" class="section-title">Why tarae</h2>
-      <dl class="points">
-        <div class="point">
-          <dt>Never waits</dt>
-          <dd>LSP, parsing, git and disk stay off the key path. A frame in under 16 ms. <a href="https://github.com/tarae-sh/tarae/blob/main/docs/features.md">Features</a></dd>
+    <section class="section real" aria-labelledby="real-heading">
+      <h2 id="real-heading" class="section-title">The real thing</h2>
+      <p class="prose">Recorded from tarae itself: three Claudes on one repository.</p>
+    </section>
+    <section class="stage" aria-label="Three Claudes in one repository: live terminal recording of tarae">
+      <div class="term-frame" id="term-frame">
+        <div id="player" class="term-grid" aria-hidden="true" hidden data-cols="120" data-rows="32" data-meok="rec/hero-meok.json" data-hanji="rec/hero-hanji.json"></div>
+        <picture id="player-fallback" class="term-fallback">
+          <source srcset="hero-hanji.png" media="(prefers-color-scheme: light)">
+          <img src="hero-meok.png" width="2216" height="1400" alt="tarae terminal showing src/main.rs and three Claude sessions side by side">
+        </picture>
+      </div>
+      <div class="stage-bar">
+        <p id="beat-caption" class="beat-caption">
+          <span class="beat-num" id="beat-num">1/6</span>
+          <span id="beat-text">Three Claudes, each in a workspace of its own.</span>
+        </p>
+        <span id="beat-announcer" class="sr-only" aria-live="polite"></span>
+        <div class="stage-controls" role="toolbar" aria-label="Playback controls">
+          <div class="beat-dots" id="beat-dots" role="group" aria-label="Scene beats"></div>
+          <button type="button" id="play-toggle" class="ctrl-btn" aria-label="Pause playback">pause</button>
         </div>
-
-        <div class="point">
-          <dt>Claude as a verb</dt>
-          <dd>select, <code>space i</code>, say it. Review the diff. <a href="https://github.com/tarae-sh/tarae/blob/main/docs/claude-integration.md">Claude</a></dd>
-        </div>
-
-        <div class="point">
-          <dt>Sandboxed by default</dt>
-          <dd>Claude's commands run confined: Seatbelt, or Landlock and seccomp. The network goes through tarae. <a href="https://github.com/tarae-sh/tarae/blob/main/docs/threat-model.md">Threat model</a></dd>
-        </div>
-
-        <div class="point">
-          <dt>Sessions side by side</dt>
-          <dd>a checkout, a Claude and a terminal each. See where each Claude reads and writes, and what would conflict, as it happens; <code>:weave</code> shows a file as they all merge. Bring them back. <a href="https://github.com/tarae-sh/tarae/blob/main/docs/claude-integration.md">Claude</a></dd>
-        </div>
-
-        <div class="point">
-          <dt>Review like a pull request</dt>
-          <dd>hunk by hunk, or at the turn's end. A second Claude reviews too. <a href="https://github.com/tarae-sh/tarae/blob/main/docs/claude-integration.md">Claude</a></dd>
-        </div>
-
-        <div class="point">
-          <dt>The web as text</dt>
-          <dd><code>:web &lt;url&gt;</code> reads a page as its markdown, a buffer like code: <code>gd</code> follows a link. Claude reads pages through the same gate as its commands. <a href="https://github.com/tarae-sh/tarae/blob/main/docs/web.md">Web pages</a></dd>
-        </div>
-
-        <div class="point">
-          <dt>Helix's keys</dt>
-          <dd>the same keymap and command names (<a href="https://github.com/tarae-sh/tarae/blob/main/docs/coming-from-helix.md">coming from Helix</a>).</dd>
-        </div>
-
-        <div class="point">
-          <dt>Plugins in Rust</dt>
-          <dd>sandboxed WebAssembly. <a href="https://github.com/tarae-sh/tarae/blob/main/docs/plugins.md">Kubernetes</a> beside your manifests.</dd>
-        </div>
-      </dl>
+      </div>
     </section>
 
     <section class="section" aria-labelledby="install-heading">
@@ -160,5 +141,19 @@ tarae .</code></pre>
       </div>
     </footer>
   </main>
+
+  <div class="toast" id="toast" hidden aria-hidden="true">
+    <div class="fr-name">messages</div>
+    <div class="toast-body" id="toast-body"></div>
+  </div>
+
+  <div class="card" id="card" hidden role="dialog" tabindex="0" aria-label="docs asks: open the sandbox a little?" aria-describedby="card-body">
+    <div class="fr-name"><b class="c3">docs</b> asks · Open the sandbox a little?</div>
+    <div class="card-body" id="card-body">
+      <p>Let Claude's commands reach <b>index.crates.io:443</b> through tarae's proxy.</p>
+      <p class="faint">Claude asks, for <code>cargo build --locked</code>: cargo needs the registry index.</p>
+    </div>
+    <div class="fr-keys" id="card-keys"></div>
+  </div>
 </body>
 </html>

@@ -6,6 +6,7 @@ Static homepage for [tarae](https://github.com/tarae-sh/tarae) — a terminal ed
 
 - `cloudflare.config.ts` — Cloudflare Workers static asset configuration (`cf` CLI).
 - `public/index.html`, `public/style.css`, `public/player.js`, `public/_headers` — one page, zero dependencies, strict `default-src 'self'` CSP, no trackers or third-party requests.
+- `public/motion.js`, `public/weave.js`, `public/weave.css` — the hero as tarae's woven view: three sessions (main, fix, docs) write the page's own text at once, a conflict shown and folded, docs asking on a card before its check reaches the network, then all brought in. `motion.js` (sync, in the head) turns it on only without `prefers-reduced-motion`; without it or without JS the page simply stands as written.
 - `public/rec/hero-meok.json`, `public/rec/hero-hanji.json` — keyframed cell-run recordings of the six-beat hero scene (*Three Claudes, one repository*), produced by `cargo xtask homepage` in the `tarae` repository.
 - `public/hero-meok.png`, `public/hero-hanji.png` — first-frame still PNGs for first paint, fallback, and Open Graph preview.
 - `public/fonts/` — subset `JetBrains Mono` (`Regular`, `Bold`, `Italic`, WOFF2) covering ASCII, Latin-1, box drawing, block elements, and tarae's glyphs.
